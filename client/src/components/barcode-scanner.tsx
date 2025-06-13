@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Camera, X, QrCode } from 'lucide-react';
+import { BrowserMultiFormatReader } from '@zxing/library';
 
 interface BarcodeScannerProps {
   onCodeDetected: (code: string) => void;
@@ -12,6 +13,7 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
   const [error, setError] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   const startCamera = async () => {
     try {
@@ -30,6 +32,21 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         await videoRef.current.play();
+
+        // 初始化條碼掃描器
+        readerRef.current = new BrowserMultiFormatReader();
+        
+        // 開始掃描條碼
+        readerRef.current.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
+          if (result) {
+            console.log('條碼掃描成功:', result.getText());
+            onCodeDetected(result.getText());
+            stopCamera();
+          }
+          if (err && !(err.name === 'NotFoundException')) {
+            console.error('掃描錯誤:', err);
+          }
+        });
       }
     } catch (err: any) {
       setError('無法啟動相機: ' + err.message);
@@ -38,27 +55,31 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
   };
 
   const stopCamera = () => {
+    // 停止條碼掃描器
+    if (readerRef.current) {
+      readerRef.current.reset();
+      readerRef.current = null;
+    }
+    
+    // 停止相機串流
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    
     setIsScanning(false);
     setError('');
   };
 
-  const handleVideoClick = () => {
-    // 模擬掃描
-    const codes = ['A1234', 'B5678', 'C9012'];
-    const randomCode = codes[Math.floor(Math.random() * codes.length)];
-    onCodeDetected(randomCode);
-    stopCamera();
-  };
-
   useEffect(() => {
     return () => {
+      if (readerRef.current) {
+        readerRef.current.reset();
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -80,17 +101,16 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
             <div className="relative w-full h-64 bg-black overflow-hidden">
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover cursor-pointer"
+                className="w-full h-full object-cover"
                 playsInline
                 muted
-                onClick={handleVideoClick}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-32 border-2 border-white border-dashed rounded-lg"></div>
               </div>
               <div className="absolute bottom-4 left-4 right-4 text-center pointer-events-none">
                 <p className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-                  點擊畫面來模擬掃描條碼
+                  將條碼對準掃描框內
                 </p>
               </div>
               <Button
