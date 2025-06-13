@@ -206,14 +206,12 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
                   將條碼對準掃描框內
                 </p>
               </div>
-              <Button
+              <button
                 onClick={stopCamera}
-                size="sm"
-                variant="destructive"
-                className="absolute top-4 right-4 rounded-full p-2"
+                className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-80 hover:opacity-100 transition-opacity"
               >
-                <X size={16} />
-              </Button>
+                <X size={14} />
+              </button>
             </div>
           ) : (
             <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
@@ -231,33 +229,16 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
         </div>
         
         <div className="p-4 space-y-4">
-          {/* 掃描按鈕 - 只在相機權限被拒絕或掃描停止時顯示 */}
+          {/* 相機控制圓點 - 隱藏在右上角 */}
           {cameraPermissionDenied && !isScanning && (
-            <Button 
-              onClick={startCamera}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <QrCode className="mr-2" size={20} />
-              重新啟動相機掃描
-            </Button>
-          )}
-          
-          {isScanning && (
-            <Button 
-              onClick={stopCamera}
-              variant="outline"
-              className="w-full"
-            >
-              停止掃描
-            </Button>
-          )}
-
-          {/* 分隔線 - 只在有掃描按鈕時顯示 */}
-          {(cameraPermissionDenied || isScanning) && (
-            <div className="flex items-center">
-              <div className="flex-1 border-t border-gray-200"></div>
-              <span className="px-3 text-sm text-gray-500">或</span>
-              <div className="flex-1 border-t border-gray-200"></div>
+            <div className="flex justify-end">
+              <button
+                onClick={startCamera}
+                className="w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white opacity-70 hover:opacity-100 transition-opacity"
+                title="啟動相機掃描"
+              >
+                <Camera size={12} />
+              </button>
             </div>
           )}
 
