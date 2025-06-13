@@ -18,6 +18,7 @@ interface BarcodeScannerProps {
 export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
+  const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
   const [validationState, setValidationState] = useState<{
     isValid: boolean;
     message: string;
@@ -91,6 +92,7 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
   const startCamera = async () => {
     try {
       setError('');
+      setCameraPermissionDenied(false);
       setIsScanning(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -122,10 +124,28 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
         });
       }
     } catch (err: any) {
-      setError('無法啟動相機: ' + err.message);
+      console.error('相機啟動失敗:', err);
       setIsScanning(false);
+      
+      if (err.name === 'NotAllowedError') {
+        setCameraPermissionDenied(true);
+        setError('需要相機權限才能自動掃描');
+      } else if (err.name === 'NotFoundError') {
+        setCameraPermissionDenied(true);
+        setError('找不到相機裝置');
+      } else {
+        setCameraPermissionDenied(true);
+        setError('無法啟動相機，請使用手動輸入');
+      }
     }
   };
+
+  // 組件載入時自動嘗試啟動相機
+  useEffect(() => {
+    if (!cameraPermissionDenied && !isScanning) {
+      startCamera();
+    }
+  }, []);
 
   const stopCamera = () => {
     // 停止條碼掃描器
@@ -211,16 +231,18 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
         </div>
         
         <div className="p-4 space-y-4">
-          {/* 掃描按鈕 */}
-          {!isScanning ? (
+          {/* 掃描按鈕 - 只在相機權限被拒絕或掃描停止時顯示 */}
+          {cameraPermissionDenied && !isScanning && (
             <Button 
               onClick={startCamera}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               <QrCode className="mr-2" size={20} />
-              開始掃描
+              重新啟動相機掃描
             </Button>
-          ) : (
+          )}
+          
+          {isScanning && (
             <Button 
               onClick={stopCamera}
               variant="outline"
@@ -230,12 +252,14 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
             </Button>
           )}
 
-          {/* 分隔線 */}
-          <div className="flex items-center">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-3 text-sm text-gray-500">或</span>
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
+          {/* 分隔線 - 只在有掃描按鈕時顯示 */}
+          {(cameraPermissionDenied || isScanning) && (
+            <div className="flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <span className="px-3 text-sm text-gray-500">或</span>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+          )}
 
           {/* 手動輸入區域 */}
           <div>
