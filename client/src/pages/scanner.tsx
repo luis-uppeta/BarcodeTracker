@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Settings, Globe, QrCode, History as HistoryIcon, Cog } from 'lucide-react';
 import { BarcodeScannerComponent } from '@/components/barcode-scanner';
-import { UIDInput } from '@/components/uid-input';
 import { ScanHistory } from '@/components/scan-history';
 import { sandboxOptions } from '@/lib/utils';
 
@@ -36,9 +35,7 @@ export default function Scanner() {
     navigate(`/scanner/${value}`, { replace: true });
   };
 
-  const handleCodeDetected = (code: string) => {
-    setCurrentUID(code);
-  };
+
 
   const toggleLanguage = () => {
     setCurrentLanguage(prev => prev === 'zh' ? 'en' : 'zh');
@@ -92,13 +89,10 @@ export default function Scanner() {
       <main className="p-4 pb-20">
         {activeTab === 'scan' && (
           <div className="space-y-6">
-            {/* Scanner Section */}
-            <BarcodeScannerComponent onCodeDetected={handleCodeDetected} />
-            
-            {/* UID Input */}
-            <UIDInput
-              value={currentUID}
-              onChange={setCurrentUID}
+            {/* Combined Scanner and UID Input */}
+            <BarcodeScannerComponent 
+              uid={currentUID}
+              onUidChange={setCurrentUID}
               sandbox={currentSandbox}
             />
           </div>

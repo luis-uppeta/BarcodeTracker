@@ -1,19 +1,92 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Camera, X, QrCode } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Camera, X, QrCode, CheckCircle, XCircle, Send, Keyboard } from 'lucide-react';
 import { BrowserMultiFormatReader } from '@zxing/library';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface BarcodeScannerProps {
-  onCodeDetected: (code: string) => void;
+  uid: string;
+  onUidChange: (uid: string) => void;
+  sandbox: string;
 }
 
-export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps) {
+export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
+  const [validationState, setValidationState] = useState<{
+    isValid: boolean;
+    message: string;
+    isEmpty: boolean;
+  }>({ isValid: false, message: '', isEmpty: true });
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const uidPattern = /^[A-Za-z]\d{4}$/;
+
+  const submitMutation = useMutation({
+    mutationFn: async (data: { uid: string, sandbox: string }) => {
+      const response = await apiRequest('POST', '/api/scan-records', data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "記錄成功！",
+        description: `UID: ${data.uid} 已成功記錄`,
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+      onUidChange('');
+      queryClient.invalidateQueries({ queryKey: ['/api/scan-records'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "提交失敗",
+        description: error.message || "請稍後再試",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateUID = (uidValue: string) => {
+    if (uidValue === '') {
+      setValidationState({
+        isValid: false,
+        message: '格式: 英文字母 + 4個數字 (例如: A1234)',
+        isEmpty: true
+      });
+      return;
+    }
+
+    const isValid = uidPattern.test(uidValue);
+    setValidationState({
+      isValid,
+      message: isValid ? 'UID 格式正確' : 'UID 格式錯誤，請輸入英文字母 + 4個數字',
+      isEmpty: false
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const upperValue = e.target.value.toUpperCase();
+    onUidChange(upperValue);
+  };
+
+  const handleSubmit = () => {
+    if (validationState.isValid && !submitMutation.isPending) {
+      submitMutation.mutate({ uid, sandbox });
+    }
+  };
+
+  useEffect(() => {
+    validateUID(uid);
+  }, [uid]);
 
   const startCamera = async () => {
     try {
@@ -40,7 +113,7 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
         readerRef.current.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
           if (result) {
             console.log('條碼掃描成功:', result.getText());
-            onCodeDetected(result.getText());
+            onUidChange(result.getText().toUpperCase());
             stopCamera();
           }
           if (err && !(err.name === 'NotFoundException')) {
@@ -137,24 +210,16 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
           )}
         </div>
         
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-4">
+          {/* 掃描按鈕 */}
           {!isScanning ? (
-            <>
-              <Button 
-                onClick={startCamera}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <QrCode className="mr-2" size={20} />
-                開始掃描
-              </Button>
-              <Button 
-                onClick={() => onCodeDetected('A1234')}
-                variant="outline"
-                className="w-full text-sm"
-              >
-                測試模式 (模擬掃描 A1234)
-              </Button>
-            </>
+            <Button 
+              onClick={startCamera}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <QrCode className="mr-2" size={20} />
+              開始掃描
+            </Button>
           ) : (
             <Button 
               onClick={stopCamera}
@@ -164,6 +229,58 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
               停止掃描
             </Button>
           )}
+
+          {/* 分隔線 */}
+          <div className="flex items-center">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-3 text-sm text-gray-500">或</span>
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
+
+          {/* 手動輸入區域 */}
+          <div>
+            <Label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <Keyboard className="mr-1" size={16} />
+              手動輸入 UID
+            </Label>
+            <div className="relative mb-2">
+              <Input
+                type="text"
+                value={uid}
+                onChange={handleInputChange}
+                placeholder="例如: A1234"
+                maxLength={5}
+                className="pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                {!validationState.isEmpty && (
+                  validationState.isValid ? (
+                    <CheckCircle className="text-green-500" size={20} />
+                  ) : (
+                    <XCircle className="text-red-500" size={20} />
+                  )
+                )}
+              </div>
+            </div>
+            <p className={`text-sm mb-3 min-h-5 ${
+              validationState.isEmpty 
+                ? 'text-gray-500' 
+                : validationState.isValid 
+                  ? 'text-green-600' 
+                  : 'text-red-600'
+            }`}>
+              {validationState.message}
+            </p>
+            
+            <Button
+              onClick={handleSubmit}
+              disabled={!validationState.isValid || submitMutation.isPending}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300"
+            >
+              <Send className="mr-2" size={16} />
+              {submitMutation.isPending ? '提交中...' : '提交記錄'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
