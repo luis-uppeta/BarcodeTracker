@@ -20,20 +20,25 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
     setError('');
     setIsScanning(true);
 
-    const scanner = new BarcodeScanner({
-      target: scannerRef.current,
-      onDetected: (code: string) => {
-        onCodeDetected(code);
-        stopScanning();
-      },
-      onError: (errorMsg: string) => {
-        setError(errorMsg);
-        setIsScanning(false);
-      }
-    });
+    try {
+      const scanner = new BarcodeScanner({
+        target: scannerRef.current,
+        onDetected: (code: string) => {
+          onCodeDetected(code);
+          stopScanning();
+        },
+        onError: (errorMsg: string) => {
+          setError(errorMsg);
+          setIsScanning(false);
+        }
+      });
 
-    scannerInstanceRef.current = scanner;
-    await scanner.start();
+      scannerInstanceRef.current = scanner;
+      await scanner.start();
+    } catch (error) {
+      setError('無法啟動掃描器，請確認相機權限');
+      setIsScanning(false);
+    }
   };
 
   const stopScanning = () => {
@@ -80,26 +85,38 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
             </div>
           ) : (
             <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
-              <div className="text-center">
+              <div className="text-center p-4">
                 <Camera className="mx-auto mb-3 text-gray-400" size={48} />
-                <p className="text-gray-600">點擊下方按鈕開始掃描</p>
+                <p className="text-gray-600 mb-2">準備開始掃描條碼</p>
+                <p className="text-sm text-gray-500">需要允許相機權限</p>
                 {error && (
-                  <p className="text-red-600 text-sm mt-2">{error}</p>
+                  <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                    {error}
+                  </div>
                 )}
               </div>
             </div>
           )}
         </div>
         
-        <div className="p-4">
+        <div className="p-4 space-y-2">
           {!isScanning ? (
-            <Button 
-              onClick={startScanning}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <QrCode className="mr-2" size={20} />
-              開始掃描
-            </Button>
+            <>
+              <Button 
+                onClick={startScanning}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <QrCode className="mr-2" size={20} />
+                開始掃描
+              </Button>
+              <Button 
+                onClick={() => onCodeDetected('A1234')}
+                variant="outline"
+                className="w-full text-sm"
+              >
+                測試模式 (模擬掃描 A1234)
+              </Button>
+            </>
           ) : (
             <Button 
               onClick={stopScanning}

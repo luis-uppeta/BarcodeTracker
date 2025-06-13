@@ -13,6 +13,11 @@ export interface ScannerConfig {
 export class BarcodeScanner {
   private isScanning = false;
   private config: ScannerConfig;
+  private stream: MediaStream | null = null;
+  private video: HTMLVideoElement | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private context: CanvasRenderingContext2D | null = null;
+  private animationId: number | null = null;
 
   constructor(config: ScannerConfig) {
     this.config = config;
@@ -22,70 +27,151 @@ export class BarcodeScanner {
     if (this.isScanning) return;
 
     try {
-      // Load QuaggaJS dynamically
+      // Get camera stream
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      });
+
+      // Create video element
+      this.video = document.createElement('video');
+      this.video.style.width = '100%';
+      this.video.style.height = '100%';
+      this.video.style.objectFit = 'cover';
+      this.video.autoplay = true;
+      this.video.playsInline = true;
+      this.video.muted = true;
+      this.video.srcObject = this.stream;
+
+      // Create canvas for frame capture
+      this.canvas = document.createElement('canvas');
+      this.context = this.canvas.getContext('2d');
+
+      // Clear target and add video
+      this.config.target.innerHTML = '';
+      this.config.target.appendChild(this.video);
+
+      this.isScanning = true;
+
+      // Load QuaggaJS for barcode detection
       if (!window.Quagga) {
         await this.loadQuaggaJS();
       }
 
-      this.isScanning = true;
-
-      const quaggaConfig = {
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: this.config.target,
-          constraints: {
-            width: 640,
-            height: 480,
-            facingMode: "environment"
-          }
-        },
-        decoder: {
-          readers: [
-            "code_128_reader",
-            "ean_reader",
-            "ean_8_reader",
-            "code_39_reader",
-            "code_93_reader"
-          ]
-        },
-        locate: true
-      };
-
-      window.Quagga.init(quaggaConfig, (err: any) => {
-        if (err) {
-          console.error('Scanner initialization failed:', err);
-          this.config.onError('Scanner initialization failed');
-          this.isScanning = false;
-          return;
-        }
-        window.Quagga.start();
-      });
-
-      window.Quagga.onDetected((result: any) => {
-        const code = result.codeResult.code;
-        this.config.onDetected(code);
-        this.stop();
-      });
+      // Start video and begin scanning
+      await this.video.play();
+      this.startBarcodeDetection();
 
     } catch (error) {
-      this.config.onError('Failed to start scanner');
+      console.error('Camera access error:', error);
+      this.config.onError('無法存取相機，請在瀏覽器設定中允許相機權限');
       this.isScanning = false;
     }
+  }
+
+  private startBarcodeDetection(): void {
+    if (!this.video || !this.canvas || !this.context) return;
+
+    const detectFrame = () => {
+      if (!this.isScanning || !this.video || !this.canvas || !this.context) return;
+
+      // Only process if video is ready
+      if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
+        // Set canvas size to match video
+        this.canvas.width = this.video.videoWidth;
+        this.canvas.height = this.video.videoHeight;
+
+        // Draw current video frame to canvas
+        this.context.drawImage(this.video, 0, 0);
+
+        // Get image data for barcode detection
+        const imageData = this.canvas.toDataURL('image/jpeg', 0.5);
+
+        // Use QuaggaJS to detect barcode
+        try {
+          window.Quagga.decodeSingle({
+            decoder: {
+              readers: [
+                "code_128_reader",
+                "ean_reader",
+                "ean_8_reader",
+                "code_39_reader",
+                "code_93_reader"
+              ]
+            },
+            locate: true,
+            src: imageData
+          }, (result: any) => {
+            if (result && result.codeResult && result.codeResult.code) {
+              const code = result.codeResult.code;
+              console.log('Barcode detected:', code);
+              this.config.onDetected(code);
+              return;
+            }
+            
+            // Continue scanning after a short delay
+            setTimeout(() => {
+              if (this.isScanning) {
+                this.animationId = requestAnimationFrame(detectFrame);
+              }
+            }, 100);
+          });
+        } catch (error) {
+          // Continue scanning on error
+          setTimeout(() => {
+            if (this.isScanning) {
+              this.animationId = requestAnimationFrame(detectFrame);
+            }
+          }, 200);
+        }
+      } else {
+        // Continue scanning if video not ready
+        this.animationId = requestAnimationFrame(detectFrame);
+      }
+    };
+
+    // Start detection loop with a small delay
+    setTimeout(() => {
+      if (this.isScanning) {
+        this.animationId = requestAnimationFrame(detectFrame);
+      }
+    }, 500);
   }
 
   stop(): void {
     if (!this.isScanning) return;
 
-    try {
-      if (window.Quagga) {
-        window.Quagga.stop();
-      }
-    } catch (error) {
-      console.error('Error stopping scanner:', error);
+    this.isScanning = false;
+
+    // Stop animation frame
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
     }
 
-    this.isScanning = false;
+    // Stop video stream
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
+    }
+
+    // Clean up video element
+    if (this.video) {
+      this.video.srcObject = null;
+      this.video = null;
+    }
+
+    // Clean up canvas
+    this.canvas = null;
+    this.context = null;
+
+    // Clear target element
+    if (this.config.target) {
+      this.config.target.innerHTML = '';
+    }
   }
 
   private async loadQuaggaJS(): Promise<void> {
