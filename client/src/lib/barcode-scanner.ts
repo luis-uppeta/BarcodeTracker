@@ -27,14 +27,23 @@ export class BarcodeScanner {
     if (this.isScanning) return;
 
     try {
-      // Get camera stream
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('不支援相機功能');
+      }
+
+      // Request camera permission and stream
+      console.log('Requesting camera permission...');
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        }
+          width: { ideal: 640, min: 320 },
+          height: { ideal: 480, min: 240 }
+        },
+        audio: false
       });
+      
+      console.log('Camera permission granted');
 
       // Create video element
       this.video = document.createElement('video');

@@ -11,32 +11,100 @@ interface BarcodeScannerProps {
 export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const scannerRef = useRef<HTMLDivElement>(null);
   const scannerInstanceRef = useRef<BarcodeScanner | null>(null);
+
+  const checkCameraPermission = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('此瀏覽器不支援相機功能');
+        return false;
+      }
+
+      // Check current permission status
+      if (navigator.permissions) {
+        const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        console.log('Camera permission status:', result.state);
+        
+        if (result.state === 'granted') {
+          setHasPermission(true);
+          return true;
+        } else if (result.state === 'denied') {
+          setError('相機權限已被拒絕，請在瀏覽器設定中重新允許');
+          setHasPermission(false);
+          return false;
+        }
+      }
+
+      // Test camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      setHasPermission(true);
+      return true;
+    } catch (error: any) {
+      console.error('Camera permission check failed:', error);
+      setHasPermission(false);
+      
+      if (error.name === 'NotAllowedError') {
+        setError('需要相機權限才能掃描條碼');
+      } else {
+        setError('無法存取相機，請檢查裝置設定');
+      }
+      return false;
+    }
+  };
 
   const startScanning = async () => {
     if (!scannerRef.current) return;
 
     setError('');
+    
+    // First check/request camera permission
+    const hasAccess = await checkCameraPermission();
+    if (!hasAccess) {
+      return;
+    }
+
     setIsScanning(true);
 
     try {
+      // Create scanner and attempt to start
       const scanner = new BarcodeScanner({
         target: scannerRef.current,
         onDetected: (code: string) => {
+          console.log('Code detected in component:', code);
           onCodeDetected(code);
           stopScanning();
         },
         onError: (errorMsg: string) => {
+          console.error('Scanner error:', errorMsg);
           setError(errorMsg);
           setIsScanning(false);
         }
       });
 
       scannerInstanceRef.current = scanner;
+      
+      // Show loading state while requesting permission
+      console.log('Starting scanner...');
       await scanner.start();
-    } catch (error) {
-      setError('無法啟動掃描器，請確認相機權限');
+      
+    } catch (error: any) {
+      console.error('Failed to start scanner:', error);
+      let errorMessage = '無法啟動掃描器';
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage = '相機權限被拒絕，請在瀏覽器設定中允許相機存取';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = '找不到相機裝置';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage = '瀏覽器不支援相機功能';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       setIsScanning(false);
     }
   };
@@ -88,10 +156,15 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
               <div className="text-center p-4">
                 <Camera className="mx-auto mb-3 text-gray-400" size={48} />
                 <p className="text-gray-600 mb-2">準備開始掃描條碼</p>
-                <p className="text-sm text-gray-500">需要允許相機權限</p>
+                <p className="text-sm text-gray-500 mb-3">點擊下方按鈕啟動相機</p>
                 {error && (
                   <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
                     {error}
+                    {error.includes('權限') && (
+                      <div className="mt-2 text-xs">
+                        提示：請點擊瀏覽器位址列旁的相機圖示來允許權限
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -102,13 +175,23 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
         <div className="p-4 space-y-2">
           {!isScanning ? (
             <>
-              <Button 
-                onClick={startScanning}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <QrCode className="mr-2" size={20} />
-                開始掃描
-              </Button>
+              {hasPermission === false ? (
+                <Button 
+                  onClick={checkCameraPermission}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <Camera className="mr-2" size={20} />
+                  請求相機權限
+                </Button>
+              ) : (
+                <Button 
+                  onClick={startScanning}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <QrCode className="mr-2" size={20} />
+                  開始掃描
+                </Button>
+              )}
               <Button 
                 onClick={() => onCodeDetected('A1234')}
                 variant="outline"
