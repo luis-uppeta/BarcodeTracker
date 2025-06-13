@@ -138,9 +138,14 @@ export function BarcodeScannerComponent({ onCodeDetected }: BarcodeScannerProps)
         <div className="relative">
           {isScanning ? (
             <div className="relative w-full h-64 bg-black overflow-hidden">
-              <div ref={scannerRef} className="w-full h-full" />
+              <div ref={scannerRef} className="w-full h-full cursor-pointer" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-48 h-32 border-2 border-white border-dashed rounded-lg"></div>
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 text-center pointer-events-none">
+                <p className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
+                  點擊畫面來模擬掃描條碼
+                </p>
               </div>
               <Button
                 onClick={stopScanning}
