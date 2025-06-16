@@ -5,12 +5,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Scanner from "@/pages/scanner";
+import Checkin from "@/pages/checkin";
+import Settings from "@/pages/settings";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Scanner} />
-      <Route path="/scanner/:sandbox?" component={Scanner} />
+      <Route path="/checkin/:sandboxname" component={Checkin} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -20,17 +20,25 @@ export function getRelativeTime(date: Date): string {
 
 export function getSandboxName(value: string): string {
   const names: Record<string, string> = {
-    'notebook-lm': 'Notebook LM 夜市導覽',
-    'vertex-ai': 'Vertex AI 夜市印象',
-    'google-gemini': 'Google Gemini 夜市小吃',
-    'ai-marketing': 'AI for Marketing 夜市金魚攤'
+    'vigenair': 'VigenAiR',
+    'videomate': 'VideoMate',
+    'feedgen': 'FeedGen',
+    'advatars': 'Advatars',
+    'sandbox5': 'Sandbox 5',
+    'sandbox6': 'Sandbox 6',
+    'sandbox7': 'Sandbox 7',
+    'sandbox8': 'Sandbox 8'
   };
   return names[value] || value;
 }
 
 export const sandboxOptions = [
-  { value: 'notebook-lm', label: 'Notebook LM 夜市導覽' },
-  { value: 'vertex-ai', label: 'Vertex AI 夜市印象' },
-  { value: 'google-gemini', label: 'Google Gemini 夜市小吃' },
-  { value: 'ai-marketing', label: 'AI for Marketing 夜市金魚攤' },
+  { value: 'vigenair', label: 'VigenAiR' },
+  { value: 'videomate', label: 'VideoMate' },
+  { value: 'feedgen', label: 'FeedGen' },
+  { value: 'advatars', label: 'Advatars' },
+  { value: 'sandbox5', label: 'Sandbox 5' },
+  { value: 'sandbox6', label: 'Sandbox 6' },
+  { value: 'sandbox7', label: 'Sandbox 7' },
+  { value: 'sandbox8', label: 'Sandbox 8' },
 ];

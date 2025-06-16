@@ -12,10 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 interface BarcodeScannerProps {
   uid: string;
   onUidChange: (uid: string) => void;
-  sandbox: string;
+  sandbox?: string;
 }
 
 export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeScannerProps) {
+  // Use provided sandbox or get from localStorage
+  const currentSandbox = sandbox || localStorage.getItem('selectedSandbox') || 'vigenair';
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
@@ -81,7 +83,7 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
 
   const handleSubmit = () => {
     if (validationState.isValid && !submitMutation.isPending) {
-      submitMutation.mutate({ uid, sandbox });
+      submitMutation.mutate({ uid, sandbox: currentSandbox });
     }
   };
 
