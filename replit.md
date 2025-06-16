@@ -49,6 +49,8 @@ A mobile-first barcode scanner web application designed for efficient UID valida
 - **Collapsible scan history**: Default to showing only 3 most recent records with expand/collapse functionality
 - **Simplified navigation**: Removed back button from checkin pages for cleaner interface
 - **Improved settings navigation**: Settings page back button now returns to previous page instead of homepage
+- **Added user identification**: Random username generation (user-XXXX format) with edit capability and IP/device tracking
+- **Continuous scanning**: Camera remains active after successful scans for continuous barcode reading
 
 ### File Structure Changes
 - `client/src/pages/scanner.tsx` - Converted to home page with sandbox selection

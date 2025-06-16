@@ -151,7 +151,7 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
                 const text = result.getText().trim();
                 console.log('條碼掃描成功:', text);
                 onUidChange(text.toUpperCase());
-                stopCamera();
+                // 保持相機開啟以便連續掃描
               }
               // 不顯示掃描錯誤
             }
