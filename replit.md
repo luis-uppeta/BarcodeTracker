@@ -48,6 +48,7 @@ A mobile-first barcode scanner web application designed for efficient UID valida
 - **Improved mobile interface**: Reduced card heights, simplified filter buttons, always show sandbox labels
 - **Collapsible scan history**: Default to showing only 3 most recent records with expand/collapse functionality
 - **Simplified navigation**: Removed back button from checkin pages for cleaner interface
+- **Improved settings navigation**: Settings page back button now returns to previous page instead of homepage
 
 ### File Structure Changes
 - `client/src/pages/scanner.tsx` - Converted to home page with sandbox selection

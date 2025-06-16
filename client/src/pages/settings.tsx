@@ -20,11 +20,13 @@ export default function Settings() {
       <div className="max-w-md mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-3">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft size={16} />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft size={16} />
+          </Button>
           <h1 className="text-xl font-semibold">設定</h1>
         </div>
 
