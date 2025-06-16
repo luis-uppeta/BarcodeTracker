@@ -3,26 +3,28 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { History, CheckCircle, Inbox, User, Users, Filter } from 'lucide-react';
-import { getRelativeTime, getSandboxName, sandboxOptions } from '@/lib/utils';
+import { History, CheckCircle, Inbox, User, Users } from 'lucide-react';
+import { getRelativeTime, getSandboxName } from '@/lib/utils';
 import type { ScanRecord } from '@shared/schema';
 
-export function ScanHistory() {
-  const [filter, setFilter] = useState<'all' | 'my-scans' | 'sandbox'>('all');
-  const [selectedSandbox, setSelectedSandbox] = useState<string>('');
+interface ScanHistoryProps {
+  currentSandbox?: string;
+}
+
+export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
+  const [filter, setFilter] = useState<'current' | 'my-scans' | 'all'>(currentSandbox ? 'current' : 'all');
 
   const { data: records = [], isLoading } = useQuery<ScanRecord[]>({
-    queryKey: ['/api/scan-records', filter, selectedSandbox],
+    queryKey: ['/api/scan-records', filter, currentSandbox],
     queryFn: async () => {
       let url = '/api/scan-records?';
       const params = new URLSearchParams();
       
       if (filter === 'my-scans') {
         params.append('filter', 'my-scans');
-      } else if (filter === 'sandbox' && selectedSandbox) {
+      } else if (filter === 'current' && currentSandbox) {
         params.append('filter', 'sandbox');
-        params.append('sandbox', selectedSandbox);
+        params.append('sandbox', currentSandbox);
       }
       
       return fetch(url + params.toString()).then(res => res.json());
@@ -68,87 +70,72 @@ export function ScanHistory() {
           <span className="text-sm text-gray-500">共 {records.length} 筆記錄</span>
         </div>
         
-        {/* Filter Controls */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={filter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('all')}
-          >
-            <Users className="mr-1" size={14} />
-            全部記錄
-          </Button>
+        {/* Filter Controls - 手機優化版本 */}
+        <div className="flex gap-1">
+          {currentSandbox && (
+            <Button
+              variant={filter === 'current' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('current')}
+              className="flex-1 text-xs px-2"
+            >
+              本區域
+            </Button>
+          )}
           <Button
             variant={filter === 'my-scans' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('my-scans')}
+            className="flex-1 text-xs px-2"
           >
-            <User className="mr-1" size={14} />
-            我的掃描
+            <User className="mr-1" size={12} />
+            我的
           </Button>
           <Button
-            variant={filter === 'sandbox' ? 'default' : 'outline'}
+            variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setFilter('sandbox')}
+            onClick={() => setFilter('all')}
+            className="flex-1 text-xs px-2"
           >
-            <Filter className="mr-1" size={14} />
-            區域篩選
+            <Users className="mr-1" size={12} />
+            全部
           </Button>
-          
-          {filter === 'sandbox' && (
-            <Select value={selectedSandbox} onValueChange={setSelectedSandbox}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="選擇區域" />
-              </SelectTrigger>
-              <SelectContent>
-                {sandboxOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
       </CardHeader>
       
       <CardContent className="p-0">
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-72 overflow-y-auto">
           {records.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <Inbox className="mx-auto mb-3 text-gray-400" size={48} />
-              <p>尚無掃描記錄</p>
-              <p className="text-sm">開始掃描條碼來建立記錄</p>
+            <div className="p-6 text-center text-gray-500">
+              <Inbox className="mx-auto mb-2 text-gray-400" size={32} />
+              <p className="text-sm">尚無掃描記錄</p>
             </div>
           ) : (
-            records.map((record) => {
-              const date = new Date(record.timestamp);
-              const relativeTime = getRelativeTime(date);
-              const fullTime = date.toLocaleString('zh-TW');
+            <div className="divide-y divide-gray-100">
+              {records.map((record) => {
+                const date = new Date(record.timestamp);
+                const relativeTime = getRelativeTime(date);
 
-              return (
-                <div key={record.id} className="p-4 border-b border-gray-50 last:border-b-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-700">{record.uid}</div>
-                      <div className="text-sm text-gray-500">{getSandboxName(record.sandbox)}</div>
-                      {record.deviceInfo && (
-                        <div className="text-xs text-blue-600 mt-1">{record.deviceInfo}</div>
-                      )}
-                      <div className="text-xs text-gray-400 mt-1">
-                        <span>{relativeTime}</span> • <span>{fullTime}</span>
+                return (
+                  <div key={record.id} className="p-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                        <CheckCircle className="text-green-500 flex-shrink-0" size={14} />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-sm font-medium text-gray-900">{record.uid}</div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {currentSandbox ? relativeTime : `${getSandboxName(record.sandbox)} • ${relativeTime}`}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                        <CheckCircle className="mr-1" size={12} />
+                      <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-100 text-green-700 flex-shrink-0">
                         成功
                       </Badge>
                     </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
       </CardContent>

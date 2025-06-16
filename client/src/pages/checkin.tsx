@@ -64,7 +64,7 @@ export default function Checkin() {
         />
 
         {/* Scan History */}
-        <ScanHistory />
+        <ScanHistory currentSandbox={sandboxname!} />
       </div>
     </div>
   );
