@@ -15,6 +15,7 @@ export const scanRecords = pgTable("scan_records", {
   deviceInfo: text("device_info"),
   userAgent: text("user_agent"),
   ipAddress: text("ip_address"),
+  username: text("username"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   success: boolean("success").notNull().default(true),
 });
@@ -30,6 +31,7 @@ export const insertScanRecordSchema = createInsertSchema(scanRecords).pick({
   deviceInfo: true,
   userAgent: true,
   ipAddress: true,
+  username: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

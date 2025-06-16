@@ -65,6 +65,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API route to get client information
+  app.get("/api/client-info", async (req, res) => {
+    try {
+      const clientIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] as string || 'unknown';
+      res.json({ 
+        ip: clientIp,
+        userAgent: req.headers['user-agent'] || 'unknown'
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
