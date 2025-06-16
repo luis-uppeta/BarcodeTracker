@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'wouter';
 import { BarcodeScannerComponent } from '@/components/barcode-scanner';
 import { ScanHistory } from '@/components/scan-history';
-import { Settings, ArrowLeft } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getSandboxName } from '@/lib/utils';
 
@@ -23,7 +23,6 @@ export default function Checkin() {
             <p className="text-gray-600 mb-4">找不到指定的 Sandbox: {sandboxname}</p>
             <Link href="/">
               <Button>
-                <ArrowLeft className="mr-2" size={16} />
                 返回首頁
               </Button>
             </Link>
@@ -38,16 +37,9 @@ export default function Checkin() {
       <div className="max-w-md mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft size={16} />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-semibold">簽到系統</h1>
-              <p className="text-sm text-gray-600">{getSandboxName(sandboxname!)}</p>
-            </div>
+          <div>
+            <h1 className="text-xl font-semibold">簽到系統</h1>
+            <p className="text-sm text-gray-600">{getSandboxName(sandboxname!)}</p>
           </div>
           <Link href="/settings">
             <Button variant="ghost" size="sm">
