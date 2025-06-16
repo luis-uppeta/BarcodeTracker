@@ -132,27 +132,27 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
         // 初始化條碼掃描器，設定最大兼容性
         readerRef.current = new BrowserMultiFormatReader();
         
-        // 使用連續掃描模式，頻繁嘗試識別
-        const scanInterval = setInterval(async () => {
-          if (!readerRef.current || !videoRef.current) return;
-          
-          try {
-            // 快速連續嘗試掃描
-            const result = await readerRef.current.decodeOnceFromVideoDevice(undefined, videoRef.current);
-            if (result) {
-              const text = result.getText().trim();
-              console.log('條碼掃描成功:', text);
-              onUidChange(text.toUpperCase());
-              clearInterval(scanInterval);
-              stopCamera();
+        // 使用穩定的連續掃描模式
+        try {
+          const controls = await readerRef.current.decodeFromVideoDevice(
+            null, 
+            videoRef.current, 
+            (result, err) => {
+              if (result) {
+                const text = result.getText().trim();
+                console.log('條碼掃描成功:', text);
+                onUidChange(text.toUpperCase());
+                stopCamera();
+              }
+              // 不顯示掃描錯誤
             }
-          } catch (err) {
-            // 掃描失敗，繼續下一次
-          }
-        }, 100); // 每100ms掃描一次，提高識別頻率
-        
-        // 儲存interval用於清理
-        (videoRef.current as any).scanInterval = scanInterval;
+          );
+          
+          // 儲存controls用於清理
+          (videoRef.current as any).scanControls = controls;
+        } catch (error) {
+          console.error('掃描初始化錯誤:', error);
+        }
       }
     } catch (err: any) {
       console.error('相機啟動失敗:', err);
@@ -179,10 +179,14 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
   }, []);
 
   const stopCamera = () => {
-    // 停止掃描間隔
-    if (videoRef.current && (videoRef.current as any).scanInterval) {
-      clearInterval((videoRef.current as any).scanInterval);
-      (videoRef.current as any).scanInterval = null;
+    // 停止掃描控制
+    if (videoRef.current && (videoRef.current as any).scanControls) {
+      try {
+        (videoRef.current as any).scanControls.stop();
+      } catch (error) {
+        console.log('停止掃描控制時發生錯誤:', error);
+      }
+      (videoRef.current as any).scanControls = null;
     }
 
     // 停止條碼掃描器
@@ -235,12 +239,10 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
                 playsInline
                 muted
               />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-32 border-2 border-white border-dashed rounded-lg"></div>
-              </div>
+
               <div className="absolute bottom-4 left-4 right-4 text-center pointer-events-none">
                 <p className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
-                  將條碼對準掃描框內
+                  將條碼對準畫面中央
                 </p>
               </div>
               <button
