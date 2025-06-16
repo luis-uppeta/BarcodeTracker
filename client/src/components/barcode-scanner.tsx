@@ -17,7 +17,7 @@ interface BarcodeScannerProps {
 
 export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeScannerProps) {
   // Use provided sandbox or get from localStorage
-  const currentSandbox = sandbox || localStorage.getItem('selectedSandbox') || 'vigenair';
+  const currentSandbox: string = sandbox || localStorage.getItem('selectedSandbox') || 'vigenair';
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string>('');
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
