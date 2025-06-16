@@ -9,6 +9,8 @@ export interface IStorage {
   createScanRecord(record: InsertScanRecord): Promise<ScanRecord>;
   getScanRecords(): Promise<ScanRecord[]>;
   getScanRecordsByTimeRange(limit?: number): Promise<ScanRecord[]>;
+  getScanRecordsByIp(ipAddress: string, limit?: number): Promise<ScanRecord[]>;
+  getScanRecordsBySandbox(sandbox: string, limit?: number): Promise<ScanRecord[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -49,6 +51,24 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(scanRecords)
+      .orderBy(desc(scanRecords.timestamp))
+      .limit(limit);
+  }
+
+  async getScanRecordsByIp(ipAddress: string, limit = 50): Promise<ScanRecord[]> {
+    return await db
+      .select()
+      .from(scanRecords)
+      .where(eq(scanRecords.ipAddress, ipAddress))
+      .orderBy(desc(scanRecords.timestamp))
+      .limit(limit);
+  }
+
+  async getScanRecordsBySandbox(sandbox: string, limit = 50): Promise<ScanRecord[]> {
+    return await db
+      .select()
+      .from(scanRecords)
+      .where(eq(scanRecords.sandbox, sandbox))
       .orderBy(desc(scanRecords.timestamp))
       .limit(limit);
   }

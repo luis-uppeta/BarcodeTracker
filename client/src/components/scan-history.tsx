@@ -1,13 +1,32 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, CheckCircle, Inbox } from 'lucide-react';
-import { getRelativeTime, getSandboxName } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { History, CheckCircle, Inbox, User, Users, Filter } from 'lucide-react';
+import { getRelativeTime, getSandboxName, sandboxOptions } from '@/lib/utils';
 import type { ScanRecord } from '@shared/schema';
 
 export function ScanHistory() {
+  const [filter, setFilter] = useState<'all' | 'my-scans' | 'sandbox'>('all');
+  const [selectedSandbox, setSelectedSandbox] = useState<string>('');
+
   const { data: records = [], isLoading } = useQuery<ScanRecord[]>({
-    queryKey: ['/api/scan-records'],
+    queryKey: ['/api/scan-records', filter, selectedSandbox],
+    queryFn: async () => {
+      let url = '/api/scan-records?';
+      const params = new URLSearchParams();
+      
+      if (filter === 'my-scans') {
+        params.append('filter', 'my-scans');
+      } else if (filter === 'sandbox' && selectedSandbox) {
+        params.append('filter', 'sandbox');
+        params.append('sandbox', selectedSandbox);
+      }
+      
+      return fetch(url + params.toString()).then(res => res.json());
+    },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
