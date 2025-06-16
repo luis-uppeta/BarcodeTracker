@@ -3,19 +3,21 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, QrCode, Clock, BarChart3, ArrowLeft } from 'lucide-react';
+import { TrendingUp, Users, QrCode, Clock, BarChart3, ArrowLeft, Crown } from 'lucide-react';
 import { Link } from 'wouter';
 import type { ScanRecord } from '@shared/schema';
-import { getSandboxName } from '@/lib/utils';
+import { getSandboxName, sandboxOptions } from '@/lib/utils';
 
 interface DashboardStats {
   totalScans: number;
   last5min: number;
   last10min: number;
   last30min: number;
+  timeSeriesData: Array<{ time: string; last5min: number; last10min: number; last30min: number }>;
   hourlyData: Array<{ hour: string; count: number }>;
-  sandboxData: Array<{ name: string; count: number; color: string }>;
+  sandboxData: Array<{ name: string; count: number; color: string; isHottest: boolean }>;
   userStats: Array<{ username: string; count: number }>;
 }
 
@@ -23,11 +25,17 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#d084d0'
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
+  const [selectedSandbox, setSelectedSandbox] = useState<string>('all');
 
-  const { data: records = [], isLoading } = useQuery<ScanRecord[]>({
+  const { data: allRecords = [], isLoading } = useQuery<ScanRecord[]>({
     queryKey: ['/api/scan-records'],
     refetchInterval: 30000, // 每30秒刷新數據
   });
+
+  // 根據選擇的sandbox篩選記錄
+  const records = selectedSandbox === 'all' 
+    ? allRecords 
+    : allRecords.filter(record => record.sandbox === selectedSandbox);
 
   const calculateStats = (): DashboardStats => {
     const now = new Date();
@@ -41,10 +49,30 @@ export default function Dashboard() {
       last5min: records.filter(r => new Date(r.timestamp) > last5min).length,
       last10min: records.filter(r => new Date(r.timestamp) > last10min).length,
       last30min: records.filter(r => new Date(r.timestamp) > last30min).length,
+      timeSeriesData: [] as Array<{ time: string; last5min: number; last10min: number; last30min: number }>,
       hourlyData: [] as Array<{ hour: string; count: number }>,
-      sandboxData: [] as Array<{ name: string; count: number; color: string }>,
+      sandboxData: [] as Array<{ name: string; count: number; color: string; isHottest: boolean }>,
       userStats: [] as Array<{ username: string; count: number }>
     };
+
+    // 生成過去6小時的時間序列數據（每30分鐘一個點）
+    const timePoints = [];
+    for (let i = 12; i >= 0; i--) {
+      const timePoint = new Date(now.getTime() - i * 30 * 60 * 1000);
+      const timeStr = timePoint.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      
+      const point5min = new Date(timePoint.getTime() - 5 * 60 * 1000);
+      const point10min = new Date(timePoint.getTime() - 10 * 60 * 1000);
+      const point30min = new Date(timePoint.getTime() - 30 * 60 * 1000);
+
+      timePoints.push({
+        time: timeStr,
+        last5min: records.filter(r => new Date(r.timestamp) > point5min && new Date(r.timestamp) <= timePoint).length,
+        last10min: records.filter(r => new Date(r.timestamp) > point10min && new Date(r.timestamp) <= timePoint).length,
+        last30min: records.filter(r => new Date(r.timestamp) > point30min && new Date(r.timestamp) <= timePoint).length
+      });
+    }
+    stats.timeSeriesData = timePoints;
 
     // 計算過去24小時的每小時數據
     const hourlyMap = new Map<string, number>();
@@ -67,16 +95,20 @@ export default function Dashboard() {
       count
     }));
 
-    // 計算 Sandbox 分布
+    // 計算 Sandbox 分布（使用全部記錄來判斷熱門度）
     const sandboxMap = new Map<string, number>();
-    records.forEach(record => {
+    allRecords.forEach(record => {
       sandboxMap.set(record.sandbox, (sandboxMap.get(record.sandbox) || 0) + 1);
     });
 
-    stats.sandboxData = Array.from(sandboxMap.entries()).map(([sandbox, count], index) => ({
+    const sortedSandboxes = Array.from(sandboxMap.entries()).sort((a, b) => b[1] - a[1]);
+    const hottestSandbox = sortedSandboxes[0]?.[0];
+
+    stats.sandboxData = sortedSandboxes.map(([sandbox, count], index) => ({
       name: getSandboxName(sandbox),
       count,
-      color: COLORS[index % COLORS.length]
+      color: COLORS[index % COLORS.length],
+      isHottest: sandbox === hottestSandbox
     }));
 
     // 計算用戶統計
@@ -113,28 +145,54 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft size={16} />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-semibold">數據儀表板</h1>
-              <p className="text-sm text-gray-600">掃描活動統計與分析</p>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link href="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft size={16} />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-semibold">數據儀表板</h1>
+                <p className="text-sm text-gray-600">掃描活動統計與分析</p>
+              </div>
             </div>
           </div>
-          <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d') => setTimeRange(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="24h">24小時</SelectItem>
-              <SelectItem value="7d">7天</SelectItem>
-              <SelectItem value="30d">30天</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          {/* 篩選控制 */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Sandbox:</span>
+              <Select value={selectedSandbox} onValueChange={setSelectedSandbox}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部區域</SelectItem>
+                  {sandboxOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">時間範圍:</span>
+              <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d') => setTimeRange(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="24h">24小時</SelectItem>
+                  <SelectItem value="7d">7天</SelectItem>
+                  <SelectItem value="30d">30天</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* 統計卡片 */}
@@ -186,50 +244,54 @@ export default function Dashboard() {
 
         {/* 圖表區域 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 24小時趨勢圖 */}
+          {/* 時間間隔趨勢圖 */}
           <Card>
             <CardHeader>
-              <CardTitle>24小時掃描趨勢</CardTitle>
-              <CardDescription>過去24小時每小時的掃描數量</CardDescription>
+              <CardTitle>掃描活動趨勢</CardTitle>
+              <CardDescription>5分鐘、10分鐘、30分鐘時間窗口的掃描數量變化</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={stats.hourlyData}>
+                <LineChart data={stats.timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
+                  <XAxis dataKey="time" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
+                  <Line type="monotone" dataKey="last5min" stroke="#8884d8" strokeWidth={2} name="5分鐘" />
+                  <Line type="monotone" dataKey="last10min" stroke="#82ca9d" strokeWidth={2} name="10分鐘" />
+                  <Line type="monotone" dataKey="last30min" stroke="#ffc658" strokeWidth={2} name="30分鐘" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Sandbox 分布圓餅圖 */}
+          {/* Sandbox 人氣排行 */}
           <Card>
             <CardHeader>
-              <CardTitle>Sandbox 分布</CardTitle>
-              <CardDescription>各個 Sandbox 的使用情況</CardDescription>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Sandbox 人氣排行</span>
+                {stats.sandboxData.find(s => s.isHottest) && (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                    <Crown className="w-3 h-3 mr-1" />
+                    最熱門: {stats.sandboxData.find(s => s.isHottest)?.name}
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>各個 Sandbox 的使用情況排名</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={stats.sandboxData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {stats.sandboxData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
+                <BarChart data={stats.sandboxData} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={80} />
                   <Tooltip />
-                </PieChart>
+                  <Bar dataKey="count" fill="#8884d8">
+                    {stats.sandboxData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.isHottest ? '#ffd700' : '#8884d8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
