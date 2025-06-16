@@ -17,7 +17,13 @@ interface DashboardStats {
   last30min: number;
   timeSeriesData: Array<{ time: string; last5min: number; last10min: number; last30min: number }>;
   hourlyData: Array<{ hour: string; count: number }>;
-  sandboxData: Array<{ name: string; count: number; color: string; isHottest: boolean }>;
+  sandboxData: Array<{ 
+    name: string; 
+    count: number; 
+    color: string; 
+    isHottest: boolean; 
+    trendData: Array<{ time: string; count: number }>;
+  }>;
   userStats: Array<{ username: string; count: number }>;
 }
 
@@ -111,12 +117,33 @@ export default function Dashboard() {
     const sortedSandboxes = Array.from(sandboxMap.entries()).sort((a, b) => b[1] - a[1]);
     const hottestSandbox = sortedSandboxes[0]?.[0];
 
-    stats.sandboxData = sortedSandboxes.map(([sandbox, count], index) => ({
-      name: getSandboxName(sandbox),
-      count,
-      color: COLORS[index % COLORS.length],
-      isHottest: sandbox === hottestSandbox && count > 0
-    }));
+    stats.sandboxData = sortedSandboxes.map(([sandbox, count], index) => {
+      // 為每個sandbox生成過去6小時的趨勢數據（每小時一個點）
+      const sandboxRecords = allRecords.filter(r => r.sandbox === sandbox);
+      const trendData = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const hourStart = new Date(now.getTime() - (i + 1) * 60 * 60 * 1000);
+        const hourEnd = new Date(now.getTime() - i * 60 * 60 * 1000);
+        const hourCount = sandboxRecords.filter(r => {
+          const recordTime = new Date(r.timestamp);
+          return recordTime > hourStart && recordTime <= hourEnd;
+        }).length;
+        
+        trendData.push({
+          time: hourEnd.toLocaleTimeString('zh-TW', { hour: '2-digit' }),
+          count: hourCount
+        });
+      }
+      
+      return {
+        name: getSandboxName(sandbox),
+        count,
+        color: COLORS[index % COLORS.length],
+        isHottest: sandbox === hottestSandbox && count > 0,
+        trendData
+      };
+    });
 
     // 計算用戶統計
     const userMap = new Map<string, number>();
@@ -202,6 +229,20 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* 總掃描數統計 */}
+        <Card className="mb-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">總掃描數</CardTitle>
+            <QrCode className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalScans}</div>
+            <p className="text-xs text-muted-foreground">
+              {selectedSandbox === 'all' ? '所有區域累計' : `${getSandboxName(selectedSandbox)} 累計`}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* 各區域統計卡片 */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           {stats.sandboxData.map((sandbox, index) => (
@@ -229,61 +270,27 @@ export default function Dashboard() {
                 <div className={`text-2xl font-bold ${sandbox.isHottest ? 'text-yellow-700' : 'text-gray-900'}`}>
                   {sandbox.count}
                 </div>
-                <p className={`text-xs ${sandbox.isHottest ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+                <p className={`text-xs mb-2 ${sandbox.isHottest ? 'text-yellow-600' : 'text-muted-foreground'}`}>
                   總掃描次數
                 </p>
+                {/* 小趨勢圖 */}
+                <div className="h-8 mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={sandbox.trendData}>
+                      <Line 
+                        type="monotone" 
+                        dataKey="count" 
+                        stroke={sandbox.color} 
+                        strokeWidth={1.5}
+                        dot={false}
+                        activeDot={{ r: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* 時間統計卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">總掃描數</CardTitle>
-              <QrCode className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalScans}</div>
-              <p className="text-xs text-muted-foreground">
-                {selectedSandbox === 'all' ? '所有區域累計' : `${getSandboxName(selectedSandbox)} 累計`}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">最近5分鐘</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.last5min}</div>
-              <p className="text-xs text-muted-foreground">最近活動</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">最近10分鐘</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.last10min}</div>
-              <p className="text-xs text-muted-foreground">中期活動</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">最近30分鐘</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.last30min}</div>
-              <p className="text-xs text-muted-foreground">長期活動</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* 圖表區域 */}
