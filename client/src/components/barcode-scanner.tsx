@@ -100,30 +100,60 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
+          width: { ideal: 1280, max: 1920, min: 640 },
+          height: { ideal: 720, max: 1080, min: 480 },
+          aspectRatio: { ideal: 16/9 },
+          focusMode: 'continuous',
+          zoom: { ideal: 1.0 }
         }
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        
+        // 設定視頻屬性以提高掃描品質
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('muted', 'true');
+        videoRef.current.style.objectFit = 'cover';
+        
         await videoRef.current.play();
 
-        // 初始化條碼掃描器
-        readerRef.current = new BrowserMultiFormatReader();
-        
-        // 開始掃描條碼
-        readerRef.current.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
-          if (result) {
-            console.log('條碼掃描成功:', result.getText());
-            onUidChange(result.getText().toUpperCase());
-            stopCamera();
-          }
-          if (err && !(err.name === 'NotFoundException')) {
-            console.error('掃描錯誤:', err);
+        // 等待視頻完全載入
+        await new Promise((resolve) => {
+          if (videoRef.current?.readyState >= 2) {
+            resolve(true);
+          } else {
+            videoRef.current?.addEventListener('loadeddata', () => resolve(true), { once: true });
           }
         });
+
+        // 初始化條碼掃描器，設定最大兼容性
+        readerRef.current = new BrowserMultiFormatReader();
+        
+        // 使用連續掃描模式，提高識別率
+        try {
+          const controls = await readerRef.current.decodeFromVideoDevice(
+            null, 
+            videoRef.current, 
+            (result, err) => {
+              if (result) {
+                const text = result.getText().trim();
+                console.log('條碼掃描成功:', text);
+                onUidChange(text.toUpperCase());
+                stopCamera();
+              }
+              // 不記錄掃描錯誤以減少日誌噪音
+            }
+          );
+          
+          // 儲存controls以便後續停止
+          if (videoRef.current) {
+            (videoRef.current as any).scanControls = controls;
+          }
+        } catch (error) {
+          console.error('掃描初始化錯誤:', error);
+        }
       }
     } catch (err: any) {
       console.error('相機啟動失敗:', err);
@@ -150,6 +180,16 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
   }, []);
 
   const stopCamera = () => {
+    // 停止掃描控制
+    if (videoRef.current && (videoRef.current as any).scanControls) {
+      try {
+        (videoRef.current as any).scanControls.stop();
+      } catch (error) {
+        console.log('停止掃描控制時發生錯誤:', error);
+      }
+      (videoRef.current as any).scanControls = null;
+    }
+
     // 停止條碼掃描器
     if (readerRef.current) {
       readerRef.current.reset();
