@@ -8,6 +8,7 @@ import { BrowserMultiFormatReader } from '@zxing/library';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { getDeviceInfo, getUserAgent } from '@/lib/device-info';
 
 interface BarcodeScannerProps {
   uid: string;
@@ -36,7 +37,7 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
   const uidPattern = /^[A-Za-z]\d{4}$/;
 
   const submitMutation = useMutation({
-    mutationFn: async (data: { uid: string, sandbox: string }) => {
+    mutationFn: async (data: { uid: string, sandbox: string, deviceInfo?: string, userAgent?: string }) => {
       const response = await apiRequest('POST', '/api/scan-records', data);
       return response.json();
     },
@@ -83,7 +84,13 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
 
   const handleSubmit = () => {
     if (validationState.isValid && !submitMutation.isPending) {
-      submitMutation.mutate({ uid, sandbox: currentSandbox });
+      const submissionData: { uid: string, sandbox: string, deviceInfo?: string, userAgent?: string } = { 
+        uid, 
+        sandbox: currentSandbox,
+        deviceInfo: getDeviceInfo(),
+        userAgent: getUserAgent()
+      };
+      submitMutation.mutate(submissionData);
     }
   };
 

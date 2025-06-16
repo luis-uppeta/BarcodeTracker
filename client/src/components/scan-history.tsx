@@ -70,6 +70,9 @@ export function ScanHistory() {
                     <div className="flex-1">
                       <div className="font-medium text-gray-700">{record.uid}</div>
                       <div className="text-sm text-gray-500">{getSandboxName(record.sandbox)}</div>
+                      {record.deviceInfo && (
+                        <div className="text-xs text-blue-600 mt-1">{record.deviceInfo}</div>
+                      )}
                       <div className="text-xs text-gray-400 mt-1">
                         <span>{relativeTime}</span> • <span>{fullTime}</span>
                       </div>
