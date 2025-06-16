@@ -43,6 +43,9 @@ A mobile-first barcode scanner web application designed for efficient UID valida
 - **Implemented routing-based sandbox access**: Added 8 individual `/checkin/:sandboxname` routes
 - **Automatic camera startup**: Camera now starts automatically on page load instead of manual activation
 - **Redesigned UI controls**: Replaced large buttons with small circular dot controls for cleaner interface
+- **Added PostgreSQL database**: Implemented IP address and device information recording
+- **Enhanced scan history filtering**: Added personal vs sandbox-wide filtering with mobile-optimized UI
+- **Improved mobile interface**: Reduced card heights, simplified filter buttons, always show sandbox labels
 
 ### File Structure Changes
 - `client/src/pages/scanner.tsx` - Converted to home page with sandbox selection

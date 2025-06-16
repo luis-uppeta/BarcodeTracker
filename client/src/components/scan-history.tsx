@@ -124,7 +124,7 @@ export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
                         <div className="min-w-0 flex-1">
                           <div className="font-mono text-sm font-medium text-gray-900">{record.uid}</div>
                           <div className="text-xs text-gray-500 truncate">
-                            {currentSandbox ? relativeTime : `${getSandboxName(record.sandbox)} • ${relativeTime}`}
+                            {getSandboxName(record.sandbox)} • {relativeTime}
                           </div>
                         </div>
                       </div>
