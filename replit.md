@@ -46,6 +46,7 @@ A mobile-first barcode scanner web application designed for efficient UID valida
 - **Added PostgreSQL database**: Implemented IP address and device information recording
 - **Enhanced scan history filtering**: Added personal vs sandbox-wide filtering with mobile-optimized UI
 - **Improved mobile interface**: Reduced card heights, simplified filter buttons, always show sandbox labels
+- **Collapsible scan history**: Default to showing only 3 most recent records with expand/collapse functionality
 
 ### File Structure Changes
 - `client/src/pages/scanner.tsx` - Converted to home page with sandbox selection

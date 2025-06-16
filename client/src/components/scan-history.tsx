@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { History, CheckCircle, Inbox, User, Users } from 'lucide-react';
+import { History, CheckCircle, Inbox, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { getRelativeTime, getSandboxName } from '@/lib/utils';
 import type { ScanRecord } from '@shared/schema';
 
@@ -13,6 +13,7 @@ interface ScanHistoryProps {
 
 export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
   const [filter, setFilter] = useState<'current' | 'my-scans' | 'all'>(currentSandbox ? 'current' : 'all');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: records = [], isLoading } = useQuery<ScanRecord[]>({
     queryKey: ['/api/scan-records', filter, currentSandbox],
@@ -67,7 +68,17 @@ export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
             <History className="mr-2 text-gray-600" size={20} />
             掃描歷史
           </h2>
-          <span className="text-sm text-gray-500">共 {records.length} 筆記錄</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">共 {records.length} 筆記錄</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1"
+            >
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Button>
+          </div>
         </div>
         
         {/* Filter Controls - 手機優化版本 */}
@@ -112,7 +123,7 @@ export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {records.map((record) => {
+              {(isExpanded ? records : records.slice(0, 3)).map((record) => {
                 const date = new Date(record.timestamp);
                 const relativeTime = getRelativeTime(date);
 
@@ -135,6 +146,18 @@ export function ScanHistory({ currentSandbox }: ScanHistoryProps) {
                   </div>
                 );
               })}
+              {!isExpanded && records.length > 3 && (
+                <div className="p-3 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsExpanded(true)}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    顯示更多 ({records.length - 3} 筆)
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
