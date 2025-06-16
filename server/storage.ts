@@ -1,4 +1,6 @@
 import { users, scanRecords, type User, type InsertUser, type ScanRecord, type InsertScanRecord } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -9,58 +11,47 @@ export interface IStorage {
   getScanRecordsByTimeRange(limit?: number): Promise<ScanRecord[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private scanRecords: Map<number, ScanRecord>;
-  private currentUserId: number;
-  private currentScanId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.scanRecords = new Map();
-    this.currentUserId = 1;
-    this.currentScanId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createScanRecord(insertRecord: InsertScanRecord): Promise<ScanRecord> {
-    const id = this.currentScanId++;
-    const record: ScanRecord = {
-      ...insertRecord,
-      id,
-      timestamp: new Date(),
-      success: true,
-    };
-    this.scanRecords.set(id, record);
+    const [record] = await db
+      .insert(scanRecords)
+      .values(insertRecord)
+      .returning();
     return record;
   }
 
   async getScanRecords(): Promise<ScanRecord[]> {
-    return Array.from(this.scanRecords.values()).sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    );
+    return await db
+      .select()
+      .from(scanRecords)
+      .orderBy(desc(scanRecords.timestamp));
   }
 
   async getScanRecordsByTimeRange(limit = 50): Promise<ScanRecord[]> {
-    const records = await this.getScanRecords();
-    return records.slice(0, limit);
+    return await db
+      .select()
+      .from(scanRecords)
+      .orderBy(desc(scanRecords.timestamp))
+      .limit(limit);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
