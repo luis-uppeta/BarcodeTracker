@@ -55,7 +55,7 @@ export default function Dashboard() {
       userStats: [] as Array<{ username: string; count: number }>
     };
 
-    // 生成過去6小時的時間序列數據（每30分鐘一個點）
+    // 生成過去6小時的時間序列數據（每30分鐘一個點）- 根據篩選條件
     const timePoints = [];
     for (let i = 12; i >= 0; i--) {
       const timePoint = new Date(now.getTime() - i * 30 * 60 * 1000);
@@ -291,7 +291,9 @@ export default function Dashboard() {
           {/* 時間間隔趨勢圖 */}
           <Card>
             <CardHeader>
-              <CardTitle>掃描活動趨勢</CardTitle>
+              <CardTitle>
+                掃描活動趨勢 - {selectedSandbox === 'all' ? '全部區域' : getSandboxName(selectedSandbox)}
+              </CardTitle>
               <CardDescription>5分鐘、10分鐘、30分鐘時間窗口的掃描數量變化</CardDescription>
             </CardHeader>
             <CardContent>
@@ -301,9 +303,29 @@ export default function Dashboard() {
                   <XAxis dataKey="time" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="last5min" stroke="#8884d8" strokeWidth={2} name="5分鐘" />
-                  <Line type="monotone" dataKey="last10min" stroke="#82ca9d" strokeWidth={2} name="10分鐘" />
-                  <Line type="monotone" dataKey="last30min" stroke="#ffc658" strokeWidth={2} name="30分鐘" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="last5min" 
+                    stroke={selectedSandbox === 'all' ? "#8884d8" : stats.sandboxData.find(s => s.name === getSandboxName(selectedSandbox))?.color || "#8884d8"} 
+                    strokeWidth={2} 
+                    name="5分鐘" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="last10min" 
+                    stroke={selectedSandbox === 'all' ? "#82ca9d" : stats.sandboxData.find(s => s.name === getSandboxName(selectedSandbox))?.color || "#82ca9d"} 
+                    strokeWidth={2} 
+                    name="10分鐘" 
+                    opacity={0.7}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="last30min" 
+                    stroke={selectedSandbox === 'all' ? "#ffc658" : stats.sandboxData.find(s => s.name === getSandboxName(selectedSandbox))?.color || "#ffc658"} 
+                    strokeWidth={2} 
+                    name="30分鐘" 
+                    opacity={0.5}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
