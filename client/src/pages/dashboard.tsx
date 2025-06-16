@@ -195,6 +195,45 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* 區域統計總覽 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>區域掃描統計總覽</span>
+            </CardTitle>
+            <CardDescription>各個 Sandbox 區域的總掃描次數</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+              {stats.sandboxData.map((sandbox, index) => (
+                <div 
+                  key={sandbox.name}
+                  className={`text-center p-3 rounded-lg border transition-all duration-200 ${
+                    sandbox.isHottest 
+                      ? 'bg-yellow-50 border-yellow-200 ring-2 ring-yellow-300 shadow-lg' 
+                      : 'bg-gray-50 border-gray-200 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    {sandbox.isHottest && <Crown className="w-4 h-4 text-yellow-600 mr-1" />}
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: sandbox.color }}
+                    />
+                  </div>
+                  <div className={`text-lg font-bold ${sandbox.isHottest ? 'text-yellow-700' : 'text-gray-900'}`}>
+                    {sandbox.count}
+                  </div>
+                  <div className={`text-xs ${sandbox.isHottest ? 'text-yellow-600' : 'text-gray-600'}`}>
+                    {sandbox.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -204,7 +243,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalScans}</div>
-              <p className="text-xs text-muted-foreground">累計掃描次數</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedSandbox === 'all' ? '所有區域累計' : `${getSandboxName(selectedSandbox)} 累計`}
+              </p>
             </CardContent>
           </Card>
 
