@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Scanner from "@/pages/scanner";
 import Checkin from "@/pages/checkin";
 import Settings from "@/pages/settings";
+import Dashboard from "@/pages/dashboard";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Scanner} />
       <Route path="/checkin/:sandboxname" component={Checkin} />
       <Route path="/settings" component={Settings} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );

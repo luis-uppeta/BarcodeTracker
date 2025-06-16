@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, QrCode } from 'lucide-react';
+import { Settings, QrCode, BarChart3 } from 'lucide-react';
 import { sandboxOptions } from '@/lib/utils';
 
 export default function Scanner() {
@@ -11,11 +11,18 @@ export default function Scanner() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">簽到系統</h1>
-          <Link href="/settings">
-            <Button variant="ghost" size="sm">
-              <Settings size={16} />
-            </Button>
-          </Link>
+          <div className="flex space-x-2">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm">
+                <BarChart3 size={16} />
+              </Button>
+            </Link>
+            <Link href="/settings">
+              <Button variant="ghost" size="sm">
+                <Settings size={16} />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Sandbox Options */}
@@ -46,6 +53,12 @@ export default function Scanner() {
             <CardTitle className="text-base">快速存取</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            <Link href="/dashboard">
+              <Button variant="outline" className="w-full justify-start">
+                <BarChart3 className="mr-2" size={16} />
+                數據儀表板
+              </Button>
+            </Link>
             <Link href="/settings">
               <Button variant="outline" className="w-full justify-start">
                 <Settings className="mr-2" size={16} />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'wouter';
 import { BarcodeScannerComponent } from '@/components/barcode-scanner';
 import { ScanHistory } from '@/components/scan-history';
-import { Settings } from 'lucide-react';
+import { Settings, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getSandboxName } from '@/lib/utils';
 
@@ -41,11 +41,18 @@ export default function Checkin() {
             <h1 className="text-xl font-semibold">簽到系統</h1>
             <p className="text-sm text-gray-600">{getSandboxName(sandboxname!)}</p>
           </div>
-          <Link href="/settings">
-            <Button variant="ghost" size="sm">
-              <Settings size={16} />
-            </Button>
-          </Link>
+          <div className="flex space-x-2">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm">
+                <BarChart3 size={16} />
+              </Button>
+            </Link>
+            <Link href="/settings">
+              <Button variant="ghost" size="sm">
+                <Settings size={16} />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Scanner Component */}
