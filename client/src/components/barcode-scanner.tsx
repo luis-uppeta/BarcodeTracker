@@ -102,9 +102,7 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
           facingMode: 'environment',
           width: { ideal: 1280, max: 1920, min: 640 },
           height: { ideal: 720, max: 1080, min: 480 },
-          aspectRatio: { ideal: 16/9 },
-          focusMode: 'continuous',
-          zoom: { ideal: 1.0 }
+          aspectRatio: { ideal: 16/9 }
         }
       });
 
@@ -120,11 +118,14 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
         await videoRef.current.play();
 
         // 等待視頻完全載入
-        await new Promise((resolve) => {
-          if (videoRef.current?.readyState >= 2) {
-            resolve(true);
+        await new Promise<void>((resolve) => {
+          const video = videoRef.current;
+          if (video && (video as HTMLVideoElement).readyState >= 2) {
+            resolve();
+          } else if (video) {
+            video.addEventListener('loadeddata', () => resolve(), { once: true });
           } else {
-            videoRef.current?.addEventListener('loadeddata', () => resolve(true), { once: true });
+            resolve();
           }
         });
 
