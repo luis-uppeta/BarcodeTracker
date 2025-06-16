@@ -229,67 +229,68 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 總掃描數統計 */}
-        <Card className="mb-4">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">總掃描數</CardTitle>
-            <QrCode className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalScans}</div>
-            <p className="text-xs text-muted-foreground">
-              {selectedSandbox === 'all' ? '所有區域累計' : `${getSandboxName(selectedSandbox)} 累計`}
-            </p>
-          </CardContent>
-        </Card>
+        {/* 總掃描數統計 - 移動優先設計 */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <QrCode className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">總掃描數</span>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-blue-900">{stats.totalScans}</div>
+              <p className="text-xs text-blue-600">
+                {selectedSandbox === 'all' ? '全部區域' : getSandboxName(selectedSandbox)}
+              </p>
+            </div>
+          </div>
+        </div>
 
-        {/* 各區域統計卡片 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        {/* 各區域統計卡片 - 移動優先設計 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {stats.sandboxData.map((sandbox, index) => (
-            <Card 
+            <div 
               key={sandbox.name}
-              className={`transition-all duration-200 ${
+              className={`rounded-lg border p-3 transition-all duration-200 ${
                 sandbox.isHottest 
-                  ? 'bg-yellow-50 border-yellow-200 ring-2 ring-yellow-300 shadow-lg' 
-                  : 'hover:shadow-md'
+                  ? 'bg-yellow-50 border-yellow-200 ring-1 ring-yellow-300 shadow-md' 
+                  : 'bg-white border-gray-200 hover:shadow-sm'
               }`}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={`text-xs font-medium ${sandbox.isHottest ? 'text-yellow-700' : ''}`}>
-                  {sandbox.name}
-                </CardTitle>
+              {/* 標題和指示器 */}
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-1">
                   {sandbox.isHottest && <Crown className="w-3 h-3 text-yellow-600" />}
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-2 h-2 rounded-full" 
                     style={{ backgroundColor: sandbox.color }}
                   />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${sandbox.isHottest ? 'text-yellow-700' : 'text-gray-900'}`}>
-                  {sandbox.count}
-                </div>
-                <p className={`text-xs mb-2 ${sandbox.isHottest ? 'text-yellow-600' : 'text-muted-foreground'}`}>
-                  總掃描次數
-                </p>
-                {/* 小趨勢圖 */}
-                <div className="h-8 mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sandbox.trendData}>
-                      <Line 
-                        type="monotone" 
-                        dataKey="count" 
-                        stroke={sandbox.color} 
-                        strokeWidth={1.5}
-                        dot={false}
-                        activeDot={{ r: 2 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+                <span className={`text-xs font-medium ${sandbox.isHottest ? 'text-yellow-700' : 'text-gray-700'}`}>
+                  {sandbox.name}
+                </span>
+              </div>
+              
+              {/* 數字 */}
+              <div className={`text-lg font-bold mb-1 ${sandbox.isHottest ? 'text-yellow-700' : 'text-gray-900'}`}>
+                {sandbox.count}
+              </div>
+              
+              {/* 小趨勢圖 */}
+              <div className="h-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={sandbox.trendData}>
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke={sandbox.color} 
+                      strokeWidth={1.5}
+                      dot={false}
+                      activeDot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           ))}
         </div>
 
