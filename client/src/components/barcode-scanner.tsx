@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { getDeviceInfo, getUserAgent } from '@/lib/device-info';
+import { getUsername } from '@/lib/user-info';
 
 interface BarcodeScannerProps {
   uid: string;
@@ -84,11 +85,12 @@ export function BarcodeScannerComponent({ uid, onUidChange, sandbox }: BarcodeSc
 
   const handleSubmit = () => {
     if (validationState.isValid && !submitMutation.isPending) {
-      const submissionData: { uid: string, sandbox: string, deviceInfo?: string, userAgent?: string } = { 
+      const submissionData: { uid: string, sandbox: string, deviceInfo?: string, userAgent?: string, username?: string } = { 
         uid, 
         sandbox: currentSandbox,
         deviceInfo: getDeviceInfo(),
-        userAgent: getUserAgent()
+        userAgent: getUserAgent(),
+        username: getUsername()
       };
       submitMutation.mutate(submissionData);
     }
