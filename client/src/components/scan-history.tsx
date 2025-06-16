@@ -60,12 +60,55 @@ export function ScanHistory() {
   return (
     <Card>
       <CardHeader className="border-b border-gray-100">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium flex items-center">
             <History className="mr-2 text-gray-600" size={20} />
             掃描歷史
           </h2>
           <span className="text-sm text-gray-500">共 {records.length} 筆記錄</span>
+        </div>
+        
+        {/* Filter Controls */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+          >
+            <Users className="mr-1" size={14} />
+            全部記錄
+          </Button>
+          <Button
+            variant={filter === 'my-scans' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('my-scans')}
+          >
+            <User className="mr-1" size={14} />
+            我的掃描
+          </Button>
+          <Button
+            variant={filter === 'sandbox' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('sandbox')}
+          >
+            <Filter className="mr-1" size={14} />
+            區域篩選
+          </Button>
+          
+          {filter === 'sandbox' && (
+            <Select value={selectedSandbox} onValueChange={setSelectedSandbox}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="選擇區域" />
+              </SelectTrigger>
+              <SelectContent>
+                {sandboxOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       
