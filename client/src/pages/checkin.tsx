@@ -11,7 +11,7 @@ export default function Checkin() {
   const [uid, setUid] = useState('');
 
   // 驗證 sandbox 是否有效
-  const validSandboxes = ['vigenair', 'videomate', 'feedgen', 'advatars', 'sandbox5', 'sandbox6', 'sandbox7', 'sandbox8'];
+  const validSandboxes = ['welcome-wall','ytw','flow'];
   const isValidSandbox = sandboxname && validSandboxes.includes(sandboxname);
 
   if (!isValidSandbox) {

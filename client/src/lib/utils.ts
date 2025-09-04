@@ -20,25 +20,15 @@ export function getRelativeTime(date: Date): string {
 
 export function getSandboxName(value: string): string {
   const names: Record<string, string> = {
-    'vigenair': 'VigenAiR',
-    'videomate': 'VideoMate',
-    'feedgen': 'FeedGen',
-    'advatars': 'Advatars',
-    'sandbox5': 'Sandbox 5',
-    'sandbox6': 'Sandbox 6',
-    'sandbox7': 'Sandbox 7',
-    'sandbox8': 'Sandbox 8'
+    'ytw': 'YouTube Works',
+    'flow': 'FLOW',
+    'welcome-wall': 'Welcome Wall'
   };
   return names[value] || value;
 }
 
 export const sandboxOptions = [
-  { value: 'vigenair', label: 'VigenAiR' },
-  { value: 'videomate', label: 'VideoMate' },
-  { value: 'feedgen', label: 'FeedGen' },
-  { value: 'advatars', label: 'Advatars' },
-  { value: 'sandbox5', label: 'Sandbox 5' },
-  { value: 'sandbox6', label: 'Sandbox 6' },
-  { value: 'sandbox7', label: 'Sandbox 7' },
-  { value: 'sandbox8', label: 'Sandbox 8' },
+  { value: 'ytw', label: 'YouTube Works' },
+  { value: 'flow', label: 'flow' },
+  { value: 'welcome-wall', label: 'Welcome Wall' },
 ];
