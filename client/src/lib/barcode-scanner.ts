@@ -77,7 +77,7 @@ export class BarcodeScanner {
 
   private handleVideoClick = () => {
     // 模擬掃描到條碼 - 實際應用中這裡會是真正的條碼識別
-    const mockBarcodes = ['A1234', 'B5678', 'C9012', 'D3456'];
+    const mockBarcodes = ['A123', 'B567', 'C901', 'D345'];
     const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
     
     console.log('模擬掃描到條碼:', randomBarcode);
