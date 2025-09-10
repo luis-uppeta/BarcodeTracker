@@ -24,7 +24,7 @@ export function UIDInput({ value, onChange, sandbox }: UIDInputProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const uidPattern = /^[A-Za-z]\d{4}$/;
+  const uidPattern = /^[A-Za-z]\d{3}$/;
 
   const submitMutation = useMutation({
     mutationFn: async (data: { uid: string, sandbox: string }) => {
@@ -57,7 +57,7 @@ export function UIDInput({ value, onChange, sandbox }: UIDInputProps) {
     if (uid === '') {
       setValidationState({
         isValid: false,
-        message: '格式: 英文字母 + 4個數字 (例如: A1234)',
+        message: '格式: 英文字母 + 3個數字 (例如: A123)',
         isEmpty: true
       });
       return;
@@ -66,7 +66,7 @@ export function UIDInput({ value, onChange, sandbox }: UIDInputProps) {
     const isValid = uidPattern.test(uid);
     setValidationState({
       isValid,
-      message: isValid ? 'UID 格式正確' : 'UID 格式錯誤，請輸入英文字母 + 4個數字',
+      message: isValid ? 'UID 格式正確' : 'UID 格式錯誤，請輸入英文字母 + 3個數字',
       isEmpty: false
     });
   };
@@ -95,8 +95,8 @@ export function UIDInput({ value, onChange, sandbox }: UIDInputProps) {
               type="text"
               value={value}
               onChange={handleInputChange}
-              placeholder="例如: A1234"
-              maxLength={5}
+              placeholder="例如: A123"
+              maxLength={4}
               className="pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
