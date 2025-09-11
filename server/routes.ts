@@ -10,11 +10,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertScanRecordSchema.parse(req.body);
       
-      // Validate UID format (English letter + 4 digits)
-      const uidPattern = /^[A-Za-z]\d{4}$/;
+      // Validate UID format (English letter + 3 digits)
+      const uidPattern = /^[A-Za-z]\d{3}$/;
       if (!uidPattern.test(validatedData.uid)) {
         return res.status(400).json({ 
-          message: "Invalid UID format. Must be English letter followed by 4 digits." 
+          message: "Invalid UID format. Must be English letter followed by 3 digits." 
         });
       }
 
